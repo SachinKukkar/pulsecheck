@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PulseCheck</title>
+  <meta name="description" content="Heart rate from ordinary face video (remote photoplethysmography), and a pulse-consistency check for deepfakes, with honest evaluation numbers.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23d03b3b' d='M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4.5 6.6 4.5c2 0 3.3 1.1 4.1 2.3h2.6c.8-1.2 2.1-2.3 4.1-2.3 3.6 0 5.7 3.5 4.2 7.1C19.5 16.4 12 21 12 21z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@3.7.0/plotly.min.js" defer></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-alert" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 11v6m0-9.5h.01"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.3-2.5 3.8m0 3h.01"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#analyze" aria-label="PulseCheck home">
+        <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4.5 6.6 4.5c2 0 3.3 1.1 4.1 2.3h2.6c.8-1.2 2.1-2.3 4.1-2.3 3.6 0 5.7 3.5 4.2 7.1C19.5 16.4 12 21 12 21z" opacity=".18"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M2.5 12.5h4l2-4 3 8 2.5-6 1.5 2h6"/></svg>
+        PulseCheck
+      </a>
+      <nav class="nav" aria-label="Sections">
+        <a href="#analyze" data-view="analyze">Analyze</a>
+        <a href="#results" data-view="results">Results</a>
+        <a href="#how" data-view="how">How it works</a>
+        <a href="#about" data-view="about">About</a>
+      </nav>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme" title="Switch colour theme">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ================================================================ ANALYZE -->
+    <section class="view" id="view-analyze" aria-labelledby="h-analyze">
+      <div class="hero">
+        <div class="eyebrow">Remote photoplethysmography</div>
+        <h1 id="h-analyze">Is there a heartbeat in this face?</h1>
+        <p class="lede">Each heartbeat pushes blood under the skin, so for a moment the skin reflects a little less green light. A camera can record that change. PulseCheck reads the pulse from ordinary video, then checks whether every patch of the face shares the same one.</p>
+      </div>
+
+      <div id="model-banner"></div>
+
+      <div class="card" id="input-card">
+        <div class="tabs" role="tablist" aria-label="Choose a video">
+          <button role="tab" id="tab-upload" aria-controls="panel-upload" aria-selected="true">Upload a video</button>
+          <button role="tab" id="tab-record" aria-controls="panel-record" aria-selected="false">Record with webcam</button>
+          <button role="tab" id="tab-sample" aria-controls="panel-sample" aria-selected="false">Try a sample</button>
+        </div>
+
+        <div class="tab-panel" id="panel-upload" role="tabpanel" aria-labelledby="tab-upload">
+          <label class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept="video/*" hidden>
+            <strong>Drop a face video here</strong> or click to choose one<br>
+            <span class="fineprint">MP4, MOV or WebM. One face, looking at the camera, 10 to 30 seconds.</span>
+          </label>
+          <div class="file-chip" id="file-chip" hidden></div>
+        </div>
+
+        <div class="tab-panel" id="panel-record" role="tabpanel" aria-labelledby="tab-record" hidden>
+          <div class="grid two">
+            <div>
+              <div class="cam" id="cam">
+                <video id="cam-video" playsinline muted></video>
+                <svg class="guide" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                  <ellipse cx="200" cy="145" rx="78" ry="104" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2.5"/>
+                </svg>
+                <div class="count" id="cam-count" hidden></div>
+              </div>
+              <div class="row" style="margin-top:12px">
+                <button class="btn" id="cam-start" type="button">Turn on camera</button>
+                <button class="btn" id="cam-record" type="button" disabled>Record 15 s</button>
+                <span class="fineprint" id="cam-status" style="margin:0"></span>
+              </div>
+            </div>
+            <div>
+              <h3>For a clean pulse</h3>
+              <ul class="tips">
+                <li>Face a window or a lamp so your face is lit evenly, with no flicker.</li>
+                <li>Fill the oval, then keep still and breathe normally.</li>
+                <li>Take glasses off if they reflect, and move hair off your forehead.</li>
+                <li>We record at a high bit rate, because compression wipes out the faint colour change.</li>
+              </ul>
+              <p class="fineprint">The camera video never leaves your browser until you press Analyze.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="panel-sample" role="tabpanel" aria-labelledby="tab-sample" hidden>
+          <div id="sample-list" class="stack"></div>
+        </div>
+
+        <div class="row" style="margin-top:18px">
+          <label class="field">Method
+            <select id="method">
+              <option value="pos" selected>POS (recommended)</option>
+              <option value="chrom">CHROM</option>
+              <option value="green">Green channel</option>
+            </select>
+          </label>
+          <span class="spacer"></span>
+          <button class="btn primary" id="analyze-btn" type="button" disabled>Analyze</button>
+        </div>
+        <p class="fineprint" id="limits-note">Videos are processed in memory and deleted when the analysis finishes. Nothing is stored.</p>
+      </div>
+
+      <div class="card" id="progress-card" hidden aria-live="polite">
+        <div class="row"><strong id="progress-stage">Uploading</strong><span class="spacer"></span><span class="fineprint" id="progress-pct" style="margin:0"></span></div>
+        <div class="progress-bar" id="progress-bar"><div></div></div>
+      </div>
+      <div class="banner bad" id="error-card" hidden role="alert"><svg class="ic" width="20" height="20"><use href="#i-x"/></svg><div id="error-text"></div></div>
+
+      <div id="analysis" hidden></div>
+    </section>
+
+    <!-- ================================================================ RESULTS -->
+    <section class="view" id="view-results" aria-labelledby="h-results">
+      <div class="hero">
+        <div class="eyebrow">Evaluation</div>
+        <h1 id="h-results">How well does it work?</h1>
+        <p class="lede">Every number on this page comes from people and videos the system never trained on. Heart rate is checked against a finger pulse oximeter; the detector is tested on held-out FaceForensics++ videos and on datasets it never saw.</p>
+      </div>
+      <div id="results-root"><div class="card empty">Loading results…</div></div>
+    </section>
+
+    <!-- ================================================================ HOW -->
+    <section class="view" id="view-how" aria-labelledby="h-how">
+      <div class="hero">
+        <div class="eyebrow">How it works</div>
+        <h1 id="h-how">From pixels to a pulse</h1>
+        <p class="lede">Six steps, from a video file to a heart rate and a real-or-fake score. The lab below runs the middle of the pipeline live in your browser, so you can watch each step change.</p>
+      </div>
+
+      <div class="steps">
+        <div class="step"><div><h3>Find the face</h3><p>MediaPipe Face Landmarker places 478 points on the face in every frame. Six skin patches are drawn between fixed points: two forehead halves, two cheeks, the nose bridge and the chin. A colour model learned from each video's own cheeks drops hair and eyebrow pixels.</p></div></div>
+        <div class="step"><div><h3>One number per frame</h3><p>Each patch's pixels are averaged into one red, one green and one blue value per frame. A 10 second clip at 30 frames a second becomes 300 numbers per colour, and those numbers are all the rest of the pipeline sees.</p></div></div>
+        <div class="step"><div><h3>Separate the pulse from the noise</h3><p>Lighting changes, movement and compression are usually bigger than the pulse. POS (Wang et al., 2017) combines the three colours so brightness changes cancel out. A band-pass filter then keeps only 0.7 to 3 Hz, the range where a heartbeat lives (42 to 180 beats a minute).</p></div></div>
+        <div class="step"><div><h3>Read the beats</h3><p>A Fourier transform splits the signal into its frequencies. The strongest one in the band, times 60, is the heart rate. In a 10 second clip the frequency steps are 0.1 Hz apart, which is 6 beats a minute.</p></div></div>
+        <div class="step"><div><h3>Compare the patches</h3><p>On a real face every patch is fed by the same heart, so their pulses rise and fall together. For each 8 second window, 91 numbers describe how well the patches agree: coherence, correlation, lag, and how strongly each patch shows the shared rhythm.</p></div></div>
+        <div class="step"><div><h3>Decide, then test honestly</h3><p>Two detectors turn each window into a probability of being fake: a classical model on those numbers, and a small CNN that reads a "PPG map" (32 patches' pulses stacked over time) and was trained on a laptop GPU. The windows vote, and the site uses whichever detector did better on validation data. Both are tested only on people they never saw, then on a different dataset entirely. See <a href="#results">Results</a>.</p></div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><h2>Pulse lab</h2><span class="sub">A simulated signal that explains the maths, computed live in your browser. Not a measurement.</span></div>
+        <div class="card">
+          <div class="lab-controls">
+            <label>True heart rate <output id="lab-bpm-out">72</output> bpm<input type="range" id="lab-bpm" min="40" max="180" step="1" value="72"></label>
+            <label>Clip length <output id="lab-len-out">10</output> s<input type="range" id="lab-len" min="4" max="30" step="1" value="10"></label>
+            <label>Noise <output id="lab-noise-out">1.0</output>&times; the pulse<input type="range" id="lab-noise" min="0" max="4" step="0.1" value="1"></label>
+            <label>Lighting flicker <output id="lab-flicker-out">0.0</output>&times; at 1.8 Hz<input type="range" id="lab-flicker" min="0" max="3" step="0.1" value="0"></label>
+          </div>
+          <div class="readout" id="lab-readout" aria-live="polite"></div>
+          <div class="grid two" style="margin-top:14px" id="lab-charts"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><h2>Where it goes wrong</h2></div>
+        <div class="grid two">
+          <div class="card"><h3>Compression</h3><p>Video compression throws away exactly the small colour changes the pulse lives in. The Results page measures heart-rate error at several H.264 quality levels.</p></div>
+          <div class="card"><h3>Movement and uneven light</h3><p>These cause most false alarms. The app warns you when the face moves a lot or the pulse signal is weak.</p></div>
+          <div class="card"><h3>Short clips</h3><p>A 10 second clip can only tell beats apart in 6 per minute steps; a 30 second clip, 2. The lab above shows why.</p></div>
+          <div class="card"><h3>Testing on people you trained on</h3><p>Clips of one person look alike, so a random split flatters the score. Results shows the same model scored both ways.</p></div>
+          <div class="card"><h3>Skin tone</h3><p>Heart-rate readers lose signal on darker skin, where melanin absorbs more of the light. Results breaks error down by an estimated skin-tone angle (ITA), and says when a dataset is too narrow to tell.</p></div>
+          <div class="card"><h3>Good fakes can have a heart</h3><p>Since 2025, high-quality face swaps have been shown to carry over the pulse of the video they were made from. A believable pulse is evidence, not proof.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ ABOUT -->
+    <section class="view" id="view-about" aria-labelledby="h-about">
+      <div class="hero">
+        <div class="eyebrow">About</div>
+        <h1 id="h-about">Model card</h1>
+        <p class="lede">What this is, what it was trained on, and when not to trust it.</p>
+      </div>
+      <div class="grid two">
+        <div class="card">
+          <h3>What it is</h3>
+          <p>A learning project that implements remote photoplethysmography (rPPG) and a FakeCatcher-style consistency check, after Ciftci, Demir and Yin (2020). It is <strong>not</strong> a forensic tool. Do not use it to accuse anyone of anything.</p>
+          <h3>Pipeline</h3>
+          <p>MediaPipe Face Landmarker (478 points), then six skin patches and a 32-patch grid, then POS, CHROM or green rPPG, then a 0.7 to 3 Hz band-pass and an FFT. Detection has two models, both trained locally: a scikit-learn classifier on 91 cross-patch features per 8 second window (chosen by grouped cross-validation), and a CNN on PPG maps (PyTorch, trained on an NVIDIA RTX 3050). The site serves whichever scored higher on validation, and a video's score is the mean of its window votes.</p>
+          <div id="about-model"></div>
+        </div>
+        <div class="card">
+          <h3>Data</h3>
+          <ul class="tips">
+            <li><strong>UBFC-rPPG</strong>: 42 uncompressed webcam videos with a finger pulse oximeter, used for heart-rate error.</li>
+            <li><strong>FaceForensics++</strong> (c23): 1,000 YouTube videos and five manipulation methods, with the official train/val/test split by source pair.</li>
+            <li><strong>Celeb-DF v2</strong>: the 518-video test list, never trained on, used for cross-dataset testing.</li>
+          </ul>
+          <p class="fineprint">None of these datasets are redistributed here. Each needs its owners' terms to be accepted.</p>
+          <h3>Known limits</h3>
+          <ul class="tips">
+            <li>Expect well below the 96% reported by FakeCatcher on its easiest test set. That paper reports about 91% on its own harder set.</li>
+            <li>High-quality face swaps can inherit the source video's pulse (Seibold et al., 2025).</li>
+            <li>Compression, motion, low light and makeup weaken the signal. Darker skin tones are under-represented in UBFC-rPPG.</li>
+            <li>Webcam clips look different from the YouTube-style training videos, so the verdict on your own clip is less certain than the test numbers suggest.</li>
+          </ul>
+          <h3>Privacy</h3>
+          <p>Uploaded or recorded videos are written to a temporary file, analysed, and deleted. No video, frame or result is stored or logged.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>References</h3>
+        <ol class="refs">
+          <li>Verkruysse, Svaasand &amp; Nelson (2008). Remote plethysmographic imaging using ambient light. <em>Optics Express</em> 16(26). <a href="https://doi.org/10.1364/OE.16.021434">doi:10.1364/OE.16.021434</a></li>
+          <li>de Haan &amp; Jeanne (2013). Robust pulse rate from chrominance-based rPPG. <em>IEEE TBME</em> 60(10). <a href="https://doi.org/10.1109/TBME.2013.2266196">doi:10.1109/TBME.2013.2266196</a></li>
+          <li>Wang, den Brinker, Stuijk &amp; de Haan (2017). Algorithmic principles of remote PPG. <em>IEEE TBME</em> 64(7). <a href="https://doi.org/10.1109/TBME.2016.2609282">doi:10.1109/TBME.2016.2609282</a></li>
+          <li>Ciftci, Demir &amp; Yin (2020). FakeCatcher: Detection of synthetic portrait videos using biological signals. <em>IEEE TPAMI</em>. <a href="https://arxiv.org/abs/1901.02212">arXiv:1901.02212</a></li>
+          <li>Bobbia et al. (2019). Unsupervised skin tissue segmentation for remote photoplethysmography (UBFC-rPPG). <em>Pattern Recognition Letters</em> 124. <a href="https://doi.org/10.1016/j.patrec.2017.10.017">doi:10.1016/j.patrec.2017.10.017</a></li>
+          <li>Rössler et al. (2019). FaceForensics++: Learning to detect manipulated facial images. <em>ICCV</em>. <a href="https://arxiv.org/abs/1901.08971">arXiv:1901.08971</a></li>
+          <li>Li et al. (2020). Celeb-DF: A large-scale challenging dataset for DeepFake forensics. <em>CVPR</em>. <a href="https://arxiv.org/abs/1909.12962">arXiv:1909.12962</a></li>
+          <li>Seibold et al. (2025). High-quality deepfakes have a heart! <em>Frontiers in Imaging</em> 4. <a href="https://doi.org/10.3389/fimag.2025.1504551">doi:10.3389/fimag.2025.1504551</a></li>
+          <li>Liu et al. (2023). rPPG-Toolbox: Deep remote PPG toolbox. <em>NeurIPS Datasets &amp; Benchmarks</em>. <a href="https://arxiv.org/abs/2210.00716">arXiv:2210.00716</a></li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap row">
+      <span>PulseCheck <span id="version"></span>. A learning project, not a forensic tool.</span>
+      <span class="spacer"></span>
+      <a href="/api/docs">API</a>
+    </div>
+  </footer>
+</body>
+</html>

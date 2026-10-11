@@ -1,0 +1,11 @@
+.venv
+.git
+.scratch
+cache
+data
+tests
+**/__pycache__
+**/*.pyc
+models/synthetic
+*.md
+!README.md

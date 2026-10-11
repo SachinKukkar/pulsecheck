@@ -1,0 +1,12 @@
+# Normalise line endings in the repository (LF), whatever the platform.
+* text=auto eol=lf
+
+# Binary files: never touch their bytes or try to diff them.
+*.joblib binary
+*.pt binary
+*.task binary
+*.npz binary
+*.docx binary
+*.png binary
+*.jpg binary
+*.mp4 binary

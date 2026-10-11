@@ -1,0 +1,21 @@
+# environment
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# big or regenerable
+cache/
+.scratch/
+*.npz
+models/face_landmarker.task
+models/synthetic/
+
+# never commit datasets (their licences forbid redistribution)
+datasets/
+
+# generated report previews and figures
+docs/*.html
+
+# local editor / assistant settings (machine-specific paths)
+.claude/

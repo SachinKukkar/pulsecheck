@@ -1,0 +1,10 @@
+# Everything in requirements.txt, plus what tests, the studies, the Word report
+# and the UBFC downloader need. PyTorch is installed separately (see GUIDE.md):
+#   pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cu126
+-r requirements.txt
+pytest==9.1.1
+httpx==0.28.1
+scikit-image==0.26.0
+imageio-ffmpeg==0.6.0
+python-docx==1.2.0
+gdown==6.4.2
