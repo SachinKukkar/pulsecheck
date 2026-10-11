@@ -12,6 +12,10 @@ short_description: Heart rate and deepfake screening from the pulse in video
 
 # PulseCheck
 
+[![tests](https://github.com/SachinKukkar/pulsecheck/actions/workflows/tests.yml/badge.svg)](https://github.com/SachinKukkar/pulsecheck/actions/workflows/tests.yml)
+![python](https://img.shields.io/badge/python-3.14-blue)
+![license](https://img.shields.io/badge/license-MIT-green)
+
 **Heart rate from ordinary face video, and a deepfake check built on the same pulse.**
 
 Each heartbeat pushes blood under the skin, so for a moment the skin reflects a little
