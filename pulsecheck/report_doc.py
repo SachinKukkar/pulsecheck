@@ -809,7 +809,7 @@ def build_report(out: str | Path, author: str | None = None, space_url: str | No
         "on every chart that shows the same numbers as an accessible table. Each skin patch keeps the same colour in the "
         "overlay image and in every chart.")
     D.h("10.3 Deployment", 2)
-    D.p("A Dockerfile builds on python:3.14-slim, adds the shared libraries OpenCV and MediaPipe need (libgl1, libglib2.0-0, "
+    D.p("A Dockerfile builds on python:3.14-slim, adds the shared libraries OpenCV and MediaPipe need (libgl1, libglib2.0-0, libegl1, libgles2, "
         "libportaudio2), installs the pinned requirements as a non-root user with uid 1000 (as Hugging Face requires), "
         "downloads and checksum-verifies the face model, and starts Uvicorn on port 7860 with a health check. The README "
         "front matter (sdk: docker, app_port: 7860) configures the Hugging Face Space, and the Hugging Face CLI uploads "

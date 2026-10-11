@@ -15,7 +15,7 @@ jobs:
           python-version: "3.14"
           cache: pip
       - name: System libraries for OpenCV / MediaPipe
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libportaudio2
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libportaudio2 libegl1 libgles2
       - name: Python packages
         run: |
           pip install -r requirements-dev.txt

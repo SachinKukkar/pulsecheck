@@ -48,3 +48,14 @@ def test_training_learns_a_toy_task_on_cpu():
     assert history[-1]["train_loss"] < history[0]["train_loss"]
     assert max(h["val_video_auc"] for h in history) > 0.8
     assert info["parameters"] > 0 and info["best_epoch"] >= 1
+
+
+def test_saved_model_reloads_in_safe_mode_and_predicts(tmp_path):
+    from pulsecheck.deep import CNNDetector
+
+    model, _, info = train_cnn(_table(64, 2), _table(32, 3), epochs=1, batch=32, device="cpu", log=lambda *_: None)
+    CNNDetector(model, 0.42, {"rppg_method": "pos", **info}).save(tmp_path / "cnn.pt")
+    det = CNNDetector.load(tmp_path / "cnn.pt")  # torch.load(weights_only=True) inside
+    assert det.threshold == pytest.approx(0.42) and det.meta["torch"] == info["torch"]
+    probs, spans, _ = det.predict_traces(make_traces([72] * 6, seconds=16.0))
+    assert len(probs) == len(spans) == 3 and ((0 <= probs) & (probs <= 1)).all()

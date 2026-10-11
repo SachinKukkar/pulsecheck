@@ -5,8 +5,9 @@ FROM python:3.14-slim
 
 # libgl1 + libglib2.0-0: OpenCV (pulled in by MediaPipe) links against them.
 # libportaudio2: MediaPipe imports sounddevice at start-up, which needs PortAudio.
+# libegl1 + libgles2: MediaPipe's Linux build loads EGL/GLES even when it runs on the CPU.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libportaudio2 \
+ && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libportaudio2 libegl1 libgles2 \
  && rm -rf /var/lib/apt/lists/*
 
 # Hugging Face runs containers as uid 1000; build and run as that user.

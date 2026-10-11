@@ -241,7 +241,7 @@ def train_cnn(Ttr: MapTable, Tva: MapTable, *, epochs: int = 40, batch: int = 25
             scaler.scale(loss).backward()
             scaler.step(opt)
             scaler.update()
-            total += float(loss) * len(idx)
+            total += loss.item() * len(idx)
             seen += len(idx)
         sched.step()
         pv = _predict(model, Tva.X, dev)
@@ -263,7 +263,7 @@ def train_cnn(Ttr: MapTable, Tva: MapTable, *, epochs: int = 40, batch: int = 25
     best_epoch = max(history, key=lambda r: r["val_video_auc"])["epoch"]
     info = {"parameters": n_params, "device": gpu, "epochs_run": len(history), "best_epoch": best_epoch,
             "train_minutes": round((time.time() - t_start) / 60, 2), "batch": batch, "lr": lr,
-            "weight_decay": weight_decay, "seed": seed, "torch": torch.__version__}
+            "weight_decay": weight_decay, "seed": seed, "torch": str(torch.__version__)}
     return model, history, info
 
 
@@ -287,8 +287,11 @@ class CNNDetector:
 
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save({"state_dict": self.model.state_dict(), "threshold": self.threshold, "meta": self.meta}, path)
-        path.with_suffix(".json").write_text(json.dumps({"threshold": self.threshold, **self.meta}, indent=2))
+        # Plain JSON types only, so the file loads with torch.load(weights_only=True) - the safe mode
+        # that refuses to run pickled code (a str subclass like torch.__version__ would be rejected).
+        meta = json.loads(json.dumps(self.meta, default=str))
+        torch.save({"state_dict": self.model.state_dict(), "threshold": float(self.threshold), "meta": meta}, path)
+        path.with_suffix(".json").write_text(json.dumps({"threshold": float(self.threshold), **meta}, indent=2))
 
     @classmethod
     def load(cls, path: str | Path, device: str = "cpu") -> "CNNDetector":
